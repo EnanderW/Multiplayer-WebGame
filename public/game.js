@@ -61,15 +61,13 @@ document.addEventListener('keyup', function(event) {
   socket.emit('keyup', event.which);
 });
 
-document.addEventListener('keypress', function(event) {
-  if (event.which == 32) {
+document.addEventListener('click', function(event) {
     socket.emit('ball', {
       mouseX: mouseX,
       mouseY: mouseY,
       halfX: halfWidth,
       halfY: halfHeight
     });
-  }
 });
 
 socket.on('onConnect', function() {
@@ -158,17 +156,11 @@ function tick() {
     if (y < cameraY - halfHeight || y > cameraY + halfHeight) {
       continue;
     }
-    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.translate((x - (cameraX - halfWidth)), (y - (cameraY - halfHeight)));
     ctx.rotate(player.rotation);
-    ctx.translate(-(canvas.width / 2), -(canvas.height / 2));
+    ctx.translate(-(x - (cameraX - halfWidth)), -(y - (cameraY - halfHeight)));
     ctx.drawImage(sprites, 7 * 16, 4 * 16, 16, 16, (x - (cameraX - halfWidth)) - 16, (y - (cameraY - halfHeight)) - 16, player.style.radius, player.style.radius);
     ctx.resetTransform();
-    /*ctx.fillStyle = player.style.color;
-    ctx.beginPath();
-    ctx.arc(x - (cameraX - halfWidth), y - (cameraY - halfHeight), player.style.radius, 0, 2 * Math.PI);
-    ctx.fill();
-    ctx.closePath();
-    ctx.stroke();*/
   }
 
   for (var i in shells) {
@@ -183,18 +175,11 @@ function tick() {
       continue;
     }
 
-    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.translate((x - (cameraX - halfWidth)), (y - (cameraY - halfHeight)));
     ctx.rotate(shell.rotation);
-    ctx.translate(-(canvas.width / 2), -(canvas.height / 2));
+    ctx.translate(-(x - (cameraX - halfWidth)), -(y - (cameraY - halfHeight)));
     ctx.drawImage(sprites, 16, 3 * 16, 16, 16, (x - (cameraX - halfWidth)) - 16, (y - (cameraY - halfHeight)) - 16, shell.style.radius, shell.style.radius);
     ctx.resetTransform();
-
-    //ctx.fillStyle = shell.style.color;
-    //ctx.beginPath();
-    //ctx.arc(x - (cameraX - halfWidth), y - (cameraY - halfHeight), shell.style.radius, 0, 2 * Math.PI);
-    //ctx.fill();
-    //ctx.closePath();
-    //ctx.stroke();
   }
 
   //ctx.reset();

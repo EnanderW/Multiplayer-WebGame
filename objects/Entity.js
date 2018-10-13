@@ -27,7 +27,7 @@ class Player extends Entity {
        (Math.floor(Math.random() * 256)) + ", "
       + (Math.floor(Math.random() * 256)) + ", "
       + (Math.floor(Math.random() * 256)) + ")",
-      radius: 35
+      radius: 40
     };
 
   }
@@ -37,6 +37,9 @@ class Shell extends Entity {
   constructor(x, y, velX, velY, id, type) {
     super(x, y, velX, velY, id);
     this.type = type;
+    this.style = {
+      radius: 35
+    }
   }
 }
 

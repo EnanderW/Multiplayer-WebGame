@@ -131,7 +131,7 @@ io.on('connection', (socket) => {
       //player.ballCooldown = Date.now() + 600;
       var shell = new Shell(player.x, player.y, velocityX, velocityY, shells.length, player.id);
 
-      shell.rotation = Math.atan2(dY, dX);
+      shell.rotation = Math.atan2(dY, dX) + Math.PI / 2;
 
       console.log("Shoot");
       shells.push(shell);
