@@ -10,7 +10,6 @@ const Shell = objects.shell;
 Shoot balls/bullets.
 When balls hit players the player flies back.
 If a player is outside the map area, they die.
-
 */
 
 var g = 98;
@@ -118,7 +117,6 @@ io.on('connection', (socket) => {
 
     socket.on('ball', function(data) {
       if (player.shellType == 0) {
-        console.log("Nope");
         return;
       }
 
@@ -133,7 +131,6 @@ io.on('connection', (socket) => {
 
       shell.rotation = Math.atan2(dY, dX) + Math.PI / 2;
 
-      console.log("Shoot");
       shells.push(shell);
       socket.emit('shootShell');
       player.shellType = 0;
@@ -174,19 +171,19 @@ function updateServer() {
     for (var i in players) {
       var player = players[i];
       if (player.up) {
-        player.y -= 100 * delta;
+        player.y -= 120 * delta;
       }
 
       if (player.down) {
-        player.y += 100 * delta;
+        player.y += 120 * delta;
       }
 
       if (player.left) {
-        player.x -= 100 * delta;
+        player.x -= 120 * delta;
       }
 
       if (player.right) {
-        player.x += 100 * delta;
+        player.x += 120 * delta;
       }
 
       if (player.velX > 0) {
@@ -235,10 +232,10 @@ function updateServer() {
       shell.y += shell.velY * delta;
     }
 
-    sizeShells = shell_map.length;
+    /*sizeShells = shell_map.length;
     for (var i = 0; i < sizeShells; i++) {
       var shell = shell_map[i];
-    }
+    }*/
 
     for (var i in players) {
       var dataSocket = sockets[i];

@@ -16,12 +16,12 @@ var cameraX = 0;
 var cameraY = 0;
 
 const backgroundImage = new Image();
-backgroundImage.src = "/BackGrid.png";
+backgroundImage.src = "/resources/BackGrid.png";
 backgroundImage.width = 1000;
 backgroundImage.height = 1000;
 
 const sprites = new Image();
-sprites.src = "/rpgItems.png";
+sprites.src = "/resources/rpgItems.png";
 
 var mouseX = 0;
 var mouseY = 0;
@@ -83,11 +83,11 @@ socket.on('playerDeath', function() {
 });
 
 socket.on('pickupShell', function(data) {
-  shellWindow.style.background = "red";
+  shellWindow.style.backgroundImage = "url('resources/emeraldGem.jpg')";
 });
 
 socket.on('shootShell', function() {
-  shellWindow.style.background = "rgba(30, 30, 30, 0.5)"
+  shellWindow.style.backgroundImage = "none";
 });
 
 function handlePlayButton() {
@@ -156,11 +156,23 @@ function tick() {
     if (y < cameraY - halfHeight || y > cameraY + halfHeight) {
       continue;
     }
-    ctx.translate((x - (cameraX - halfWidth)), (y - (cameraY - halfHeight)));
+
+    const halfRadius = player.style.radius / 2;
+
+    const writeX = (x - (cameraX - halfWidth));
+    const writeY = (y - (cameraY - halfHeight));
+    const rotatedX = writeX + halfRadius;
+    const rotatedY = writeY + halfRadius;
+
+    ctx.translate(rotatedX, rotatedY);
     ctx.rotate(player.rotation);
-    ctx.translate(-(x - (cameraX - halfWidth)), -(y - (cameraY - halfHeight)));
-    ctx.drawImage(sprites, 7 * 16, 4 * 16, 16, 16, (x - (cameraX - halfWidth)) - 16, (y - (cameraY - halfHeight)) - 16, player.style.radius, player.style.radius);
+    ctx.translate(-rotatedX, -rotatedY);
+    ctx.drawImage(sprites, 7 * 16 + 1, 4 * 16, 16, 16, writeX, writeY, player.style.radius, player.style.radius);
     ctx.resetTransform();
+    //ctx.beginPath();
+    ctx.strokeStyle = "red";
+    ctx.rect(writeX, writeY, player.style.radius, player.style.radius);
+    ctx.stroke();
   }
 
   for (var i in shells) {
@@ -175,11 +187,20 @@ function tick() {
       continue;
     }
 
-    ctx.translate((x - (cameraX - halfWidth)), (y - (cameraY - halfHeight)));
+    const halfRadius = shell.style.radius / 2;
+
+    const writeX = (x - (cameraX - halfWidth));
+    const writeY = (y - (cameraY - halfHeight));
+    const rotatedX = writeX + halfRadius;
+    const rotatedY = writeY + halfRadius;
+
+    ctx.translate(rotatedX, rotatedY);
     ctx.rotate(shell.rotation);
-    ctx.translate(-(x - (cameraX - halfWidth)), -(y - (cameraY - halfHeight)));
-    ctx.drawImage(sprites, 16, 3 * 16, 16, 16, (x - (cameraX - halfWidth)) - 16, (y - (cameraY - halfHeight)) - 16, shell.style.radius, shell.style.radius);
+    ctx.translate(-rotatedX, -rotatedY);
+    ctx.drawImage(sprites, 16, 3 * 16, 16, 16, writeX, writeY, shell.style.radius, shell.style.radius);
     ctx.resetTransform();
+    ctx.rect(writeX, writeY, shell.style.radius, shell.style.radius);
+    ctx.stroke();
   }
 
   //ctx.reset();
@@ -195,11 +216,11 @@ function tick() {
       continue;
     }
 
-    ctx.fillStyle = shell.style.color;
-    ctx.beginPath();
-    ctx.arc(x - (cameraX - halfWidth), y - (cameraY - halfHeight), shell.style.radius, 0, 2 * Math.PI);
-    ctx.fill();
-    ctx.closePath();
+    const writeX = (x - (cameraX - halfWidth));
+    const writeY = (y - (cameraY - halfHeight));
+
+    ctx.drawImage(sprites, 32, 3 * 16, 16, 16, writeX, writeY, 30, 30);
+    ctx.rect(writeX, writeY, 30, 30);
     ctx.stroke();
   }
 
