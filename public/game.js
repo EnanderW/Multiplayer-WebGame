@@ -83,11 +83,11 @@ socket.on('playerDeath', function() {
 });
 
 socket.on('pickupShell', function(data) {
-  shellWindow.style.backgroundImage = "url('resources/emeraldGem.jpg')";
+  shellWindow.innerHTML += "<span></span>";
 });
 
 socket.on('shootShell', function() {
-  shellWindow.style.backgroundImage = "none";
+  shellWindow.removeChild(shellWindow.firstChild);
 });
 
 function handlePlayButton() {

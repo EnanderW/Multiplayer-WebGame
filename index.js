@@ -116,7 +116,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('ball', function(data) {
-      if (player.shellType == 0) {
+      if (player.shells <= 0) {
         return;
       }
 
@@ -133,7 +133,7 @@ io.on('connection', (socket) => {
 
       shells.push(shell);
       socket.emit('shootShell');
-      player.shellType = 0;
+      player.shells--;
       setTimeout(function() {
         shells.splice(shell.id, 1);
       }, 3000);
@@ -198,28 +198,24 @@ function updateServer() {
         player.velY += g * delta;
       }
 
-
-
       if (player.x > mapWidth || player.x < 0 || player.y > mapHeight || player.y < 0) {
         handleDeath(player);
         continue;
       }
 
-      if (player.shellType == 0) {
-        var sizeMap = shell_map.length;
-        for (var shellI = 0; shellI < sizeMap; shellI++) {
-          var shell = shell_map[shellI];
+      var sizeMap = shell_map.length;
+      for (var shellI = 0; shellI < sizeMap; shellI++) {
+        var shell = shell_map[shellI];
 
-          var dX = shell.x - player.x;
-          var dY = shell.y - player.y;
-          var distanceSquared = (dX * dX + dY * dY);
-          var rad = (shell.style.radius + player.style.radius);
-          if (distanceSquared <= rad * rad) {
-            sockets[i].socket.emit('pickupShell', shell.type);
-            player.shellType = shell.type;
-            shell_map.splice(shellI, 1);
-            break;
-          }
+        var dX = shell.x - player.x;
+        var dY = shell.y - player.y;
+        var distanceSquared = (dX * dX + dY * dY);
+        var rad = (shell.style.radius + player.style.radius);
+        if (distanceSquared <= rad * rad) {
+          sockets[i].socket.emit('pickupShell', shell.type);
+          player.shells++;
+          shell_map.splice(shellI, 1);
+          break;
         }
       }
     }

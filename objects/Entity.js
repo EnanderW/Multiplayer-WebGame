@@ -21,7 +21,7 @@ class Player extends Entity {
     this.left = false;
     this.right = false;
     //this.ballCooldown = 0;
-    this.shellType = 0;
+    this.shells = 0;
     this.style = {
       color: "rgb(" +
        (Math.floor(Math.random() * 256)) + ", "
