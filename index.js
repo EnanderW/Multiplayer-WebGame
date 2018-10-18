@@ -12,7 +12,7 @@ When balls hit players the player flies back.
 If a player is outside the map area, they die.
 */
 
-var g = 98;
+var g = 108;
 var delta = 0;
 var lastTime = Date.now();
 
@@ -48,13 +48,17 @@ io.on('connection', (socket) => {
     socket.emit('onConnect');
 
     const id = getCounter();
-    var player = new Player(Math.floor(Math.random() * mapWidth), Math.floor(Math.random() * mapHeight), 0, 0, id);
+    const player = new Player(Math.floor(Math.random() * mapWidth), Math.floor(Math.random() * mapHeight), 0, 0, id);
     sockets[id] = {
       socket: socket,
       player: player
     };
     socket.on('onSpawn', function() {
-      player = new Player(Math.floor(Math.random() * mapWidth), Math.floor(Math.random() * mapHeight), 0, 0, id);
+      player.x = Math.floor(Math.random() * mapWidth);
+      player.y = Math.floor(Math.random() * mapHeight);
+      player.velX = 0;
+      player.velY = 0;
+      //player = new Player(Math.floor(Math.random() * mapWidth), Math.floor(Math.random() * mapHeight), 0, 0, id);
       players[id] = player;
     });
 
@@ -123,11 +127,11 @@ io.on('connection', (socket) => {
       const dX = data.mouseX - data.halfX;
       const dY = data.mouseY - data.halfY;
       const v = Math.sqrt(dX * dX + dY * dY);
-      const velocityX = (dX / v) * 300;
-      const velocityY = (dY / v) * 300;
+      const velocityX = (dX / v) * 420;
+      const velocityY = (dY / v) * 420;
 
       //player.ballCooldown = Date.now() + 600;
-      const shell = new Shell(player.x, player.y, velocityX, velocityY, shells.length, player.id);
+      const shell = new Shell(player.x, player.y, velocityX, velocityY, shells.length, 1, player.id);
 
       shell.rotation = Math.atan2(dY, dX) + (Math.PI / 2);
 
@@ -149,10 +153,7 @@ function updateShells() {
     x: Math.floor(Math.random() * mapWidth),
     y: Math.floor(Math.random() * mapHeight),
     type: Math.floor(Math.random() * 4) + 1,
-    style: {
-      color: "red",
-      radius: 5
-    }
+    radius: 5
   };
 
   shell_map.push(shell);
@@ -171,21 +172,23 @@ function updateServer() {
 
   for (var i in players) {
     const player = players[i];
+    if (!(Math.abs(player.velX) > 0.2 || Math.abs(player.velY) > 0.2)) {
     if (player.up) {
-      player.y -= 120 * delta;
+      player.y -= 150 * delta;
     }
 
     if (player.down) {
-      player.y += 120 * delta;
+      player.y += 150 * delta;
     }
 
     if (player.left) {
-      player.x -= 120 * delta;
+      player.x -= 150 * delta;
     }
 
     if (player.right) {
-      player.x += 120 * delta;
+      player.x += 150 * delta;
     }
+  }
 
     if (player.velX > 0) {
       player.velX -= g * delta;
@@ -194,18 +197,19 @@ function updateServer() {
     }
 
     if (player.velY > 0) {
-    player.velY -= g * delta;
+      player.velY -= g * delta;
     } else if (player.velY < 0) {
       player.velY += g * delta;
     }
 
-    player.x += player.velX;
-    player.y += player.velY;
+    player.x += player.velX * delta;
+    player.y += player.velY * delta;
 
-    if (player.x + player.style.radius > mapWidth || player.x < 0 || player.y + player.style.radius > mapHeight || player.y < 0) {
+    if (player.x + player.radius > mapWidth || player.x < 0 || player.y + player.radius > mapHeight || player.y < 0) {
       handleDeath(player);
       continue;
     }
+
 
     const sizeMap = shell_map.length;
     for (var shellI = 0; shellI < sizeMap; shellI++) {
@@ -214,7 +218,7 @@ function updateServer() {
       const dX = shell.x - player.x;
       const dY = shell.y - player.y;
       const distanceSquared = (dX * dX + dY * dY);
-      const rad = (shell.style.radius + player.style.radius);
+      const rad = (shell.radius + player.radius);
       if (distanceSquared <= rad * rad) {
         sockets[i].socket.emit('pickupShell', shell.type);
         player.shells++;
@@ -222,43 +226,64 @@ function updateServer() {
         break;
       }
     }
+  }
 
-    const sizeShells = shells.length;
-    for (var i = 0; i < sizeShells; i++) {
-      const shell = shells[i];
+  const sizeShells = shells.length;
+  for (var i = 0; i < sizeShells; i++) {
+    const shell = shells[i];
 
-      shell.x += shell.velX * delta;
-      shell.y += shell.velY * delta;
+    if (shell == null) {
+      continue;
+    }
 
-      for (var playerI in players) {
-        const player = players[playerI];
-        //console.log("------------");
-        //console.log("pPos: " + player.x + ", " + player.y + " | " + player.style.radius);
-        //console.log("sPos: " + shell.x + ", " + shell.y + " | " + shell.style.radius);
-        if (player.id != shell.playerId &&
-          player.x < shell.x + shell.style.radius &&
-          player.x + player.style.size > shell.x &&
-          player.y < shell.y + shell.style.radius &&
-          player.y + player.style.radius > shell.y) {
+    shell.x += shell.velX * delta;
+    shell.y += shell.velY * delta;
 
-          console.log("Collision");
-          player.velX = shell.velX;
-          player.velY = shell.velY;
-          shells.splice(i, 1);
-        }
+    for (var playerI in players) {
+      const player = players[playerI];
+      //shell.x = player.x;
+      //console.log("------------");
+      //console.log("pPos: " + player.x + ", " + player.y + " | " + player.style.radius);
+      //console.log("sPos: " + shell.x + ", " + shell.y + " | " + shell.style.radius);
+      //console.log("p: " + player.id + " s: " + shell.playerId);
+      if (player.id == shell.playerId) {
+        //console.log("1");
+        continue;
+      }
+      if (!(player.x < shell.x + shell.radius)) {
+        //console.log("pX: " + player.x + " sX: " + shell.x + " fX: " + (shell.x + shell.radius));
+        //console.log("2");
+        continue;
+      }
+      if (!(player.x + player.radius > shell.x)) {
+        //console.log("fX: " + (player.x + player.size) + " sX: " + shell.x);
+        //console.log("3");
+        continue;
+      }
+      if (!(player.y < shell.y + shell.radius)) {
+        //console.log("4");
+        continue;
+      }
+      if (player.y + player.radius > shell.y) {
+
+        //console.log("Collision");
+        player.velX = shell.velX;
+        player.velY = shell.velY;
+        shells.splice(i, 1);
+        break;
       }
     }
+  }
 
-    for (var i in players) {
-      const dataSocket = sockets[i];
-      const player = players[i];
-      dataSocket.socket.emit('update',
-      players,
-      shells,
-      shell_map,
-      player.x,
-      player.y);
-    }
+  for (var i in players) {
+    const dataSocket = sockets[i];
+    const player = players[i];
+    dataSocket.socket.emit('update',
+    players,
+    shells,
+    shell_map,
+    player.x,
+    player.y);
   }
 }
 

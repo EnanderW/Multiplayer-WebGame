@@ -6,10 +6,7 @@ class Entity {
     this.velX = velX;
     this.velY = velY;
     this.id = id;
-    this.style = {
-      color: "black",
-      radius: 10
-    }
+    this.radius = 10;
   }
 }
 
@@ -22,13 +19,7 @@ class Player extends Entity {
     this.right = false;
     //this.ballCooldown = 0;
     this.shells = 0;
-    this.style = {
-      color: "rgb(" +
-       (Math.floor(Math.random() * 256)) + ", "
-      + (Math.floor(Math.random() * 256)) + ", "
-      + (Math.floor(Math.random() * 256)) + ")",
-      radius: 40
-    };
+    this.radius = 40;
 
   }
 }
@@ -38,9 +29,7 @@ class Shell extends Entity {
     super(x, y, velX, velY, id);
     this.type = type;
     this.playerId = playerId;
-    this.style = {
-      radius: 35
-    }
+    this.radius = 35;
   }
 }
 

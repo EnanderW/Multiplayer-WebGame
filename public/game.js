@@ -2,7 +2,7 @@
 const socket = io.connect('10.204.149.4:4000');
 
 const canvas = document.getElementById("canvas");
-var ctx = canvas.getContext("2d");
+const ctx = canvas.getContext("2d");
 
 const fullContainer = document.getElementById("fullContainer");
 const popupWindow = document.getElementById("popMax");
@@ -13,11 +13,11 @@ var players = [];
 var shells = [];
 var shell_map = [];
 
-var cameraX = 0;
-var cameraY = 0;
+var cameraX = 500;
+var cameraY = 500;
 
 const backgroundImage = new Image();
-backgroundImage.src = "/resources/testBack2.jpg";
+backgroundImage.src = "/resources/Pattern_2.jpg";
 backgroundImage.width = 1000;
 backgroundImage.height = 1000;
 
@@ -44,14 +44,14 @@ function updateSize() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 
-  var halfWidth = canvas.width / 2;
-  var halfHeight = canvas.height / 2;
+  halfWidth = canvas.width / 2;
+  halfHeight = canvas.height / 2;
 }
 
 document.addEventListener('mousemove', function(event) {
   mouseX = event.clientX;
   mouseY = event.clientY;
-  socket.emit("rotation", 0.785398163 + Math.atan2(mouseY - (halfHeight), mouseX - (halfWidth)));
+  socket.emit("rotation", 0.785398163 + Math.atan2(mouseY - (halfHeight + 20), mouseX - (halfWidth + 20)));
 });
 
 document.addEventListener('keydown', function(event) {
@@ -73,14 +73,22 @@ document.addEventListener('click', function(event) {
 
 socket.on('onConnect', function() {
   //Handle popup window.
-  popupWindow.style.display = "flex";
+  popupWindow.style.visibility = "visible";
+  popupWindow.style.opacity = 1;
+  popupWindow.style.pointerEvents = "all";
   fullContainer.style.opacity = 0.4;
+  shellAmountCount = 0;
+  shellAmount.innerHTML = "x0";
 });
 
 socket.on('playerDeath', function() {
   //Handle popup window.
-  popupWindow.style.display = "flex";
+  popupWindow.style.visibility = "visible";
+  popupWindow.style.opacity = 1;
+  popupWindow.style.pointerEvents = "all";
   fullContainer.style.opacity = 0.4;
+  shellAmountCount = 0;
+  shellAmount.innerHTML = "x0";
 });
 
 var shellAmountCount = 0;
@@ -94,10 +102,15 @@ socket.on('shootShell', function() {
 });
 
 function handlePlayButton() {
-  popupWindow.style.display = "none";
+  setTimeout(function() {
+    socket.emit('onSpawn');
+  }, 950);
+  popupWindow.style.visibility = "hidden";
+  popupWindow.style.pointerEvents = "none";
+  popupWindow.style.opacity = 0;
   fullContainer.style.opacity = 1;
-  //canvas.style.pointerEvents = "all";
-  socket.emit('onSpawn');
+  shellAmountCount = 0;
+  shellAmount.innerHTML = "x0";
 }
 
 socket.on('update', function(_players, _shells, _shell_map, _cameraX, _cameraY) {
@@ -110,10 +123,10 @@ socket.on('update', function(_players, _shells, _shell_map, _cameraX, _cameraY) 
 
 function tick() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  var left = cameraX - halfWidth;
-  var top = cameraY - halfHeight;
-  var right = cameraX + halfWidth;
-  var bottom = cameraY + halfHeight;
+  const left = cameraX - halfWidth;
+  const top = cameraY - halfHeight;
+  const right = cameraX + halfWidth;
+  const bottom = cameraY + halfHeight;
   ctx.drawImage(
     backgroundImage,
     left,
@@ -126,10 +139,10 @@ function tick() {
     canvas.height
   );
 
-  var zeroX = -(cameraX - halfWidth);
-  var maxX = mapWidth - (cameraX - halfWidth);
-  var zeroY =  -(cameraY - halfHeight);
-  var maxY = mapHeight - (cameraY - halfHeight);
+  const zeroX = -(cameraX - halfWidth);
+  const maxX = mapWidth - (cameraX - halfWidth);
+  const zeroY = -(cameraY - halfHeight);
+  const maxY = mapHeight - (cameraY - halfHeight);
 
   ctx.strokeStyle = "#000000";
   ctx.beginPath();
@@ -160,7 +173,7 @@ function tick() {
       continue;
     }
 
-    const halfRadius = player.style.radius / 2;
+    const halfRadius = player.radius / 2;
 
     const writeX = (x - (cameraX - halfWidth));
     const writeY = (y - (cameraY - halfHeight));
@@ -170,7 +183,7 @@ function tick() {
     ctx.translate(rotatedX, rotatedY);
     ctx.rotate(player.rotation);
     ctx.translate(-rotatedX, -rotatedY);
-    ctx.drawImage(sprites, (7 * 16), 4 * 16, 16, 16, writeX, writeY, player.style.radius, player.style.radius);
+    ctx.drawImage(sprites, (7 * 16), 4 * 16, 16, 16, writeX, writeY, player.radius, player.radius);
     ctx.resetTransform();
     //ctx.beginPath();
     //ctx.strokeStyle = "red";
@@ -190,7 +203,7 @@ function tick() {
       continue;
     }
 
-    const halfRadius = shell.style.radius / 2;
+    const halfRadius = shell.radius / 2;
 
     const writeX = (x - (cameraX - halfWidth));
     const writeY = (y - (cameraY - halfHeight));
@@ -200,13 +213,12 @@ function tick() {
     ctx.translate(rotatedX, rotatedY);
     ctx.rotate(shell.rotation);
     ctx.translate(-rotatedX, -rotatedY);
-    ctx.drawImage(sprites, 16, 3 * 16, 16, 16, writeX, writeY, shell.style.radius, shell.style.radius);
+    ctx.drawImage(sprites, 16, 3 * 16, 16, 16, writeX, writeY, shell.radius, shell.radius);
     ctx.resetTransform();
     //ctx.rect(writeX, writeY, shell.style.radius, shell.style.radius);
     //ctx.stroke();
   }
 
-  //ctx.reset();
   for (var i in shell_map) {
     const shell = shell_map[i];
     const x = shell.x;
