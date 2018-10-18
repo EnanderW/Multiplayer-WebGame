@@ -34,9 +34,10 @@ class Player extends Entity {
 }
 
 class Shell extends Entity {
-  constructor(x, y, velX, velY, id, type) {
+  constructor(x, y, velX, velY, id, type, playerId) {
     super(x, y, velX, velY, id);
     this.type = type;
+    this.playerId = playerId;
     this.style = {
       radius: 35
     }

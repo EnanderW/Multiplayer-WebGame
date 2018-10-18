@@ -1,5 +1,5 @@
 // Make connection
-const socket = io.connect('localhost:4000');
+const socket = io.connect('10.204.149.4:4000');
 
 const canvas = document.getElementById("canvas");
 var ctx = canvas.getContext("2d");
@@ -7,6 +7,7 @@ var ctx = canvas.getContext("2d");
 const fullContainer = document.getElementById("fullContainer");
 const popupWindow = document.getElementById("popMax");
 const shellWindow = document.getElementById("shellSlot");
+const shellAmount = document.getElementById("shellAmount");
 
 var players = [];
 var shells = [];
@@ -16,7 +17,7 @@ var cameraX = 0;
 var cameraY = 0;
 
 const backgroundImage = new Image();
-backgroundImage.src = "/resources/BackGrid.png";
+backgroundImage.src = "/resources/testBack2.jpg";
 backgroundImage.width = 1000;
 backgroundImage.height = 1000;
 
@@ -82,12 +83,14 @@ socket.on('playerDeath', function() {
   fullContainer.style.opacity = 0.4;
 });
 
+var shellAmountCount = 0;
+
 socket.on('pickupShell', function(data) {
-  shellWindow.innerHTML += "<span></span>";
+  shellAmount.innerHTML = "x" + (++shellAmountCount);
 });
 
 socket.on('shootShell', function() {
-  shellWindow.removeChild(shellWindow.firstChild);
+  shellAmount.innerHTML = "x" + (--shellAmountCount);
 });
 
 function handlePlayButton() {
@@ -167,12 +170,12 @@ function tick() {
     ctx.translate(rotatedX, rotatedY);
     ctx.rotate(player.rotation);
     ctx.translate(-rotatedX, -rotatedY);
-    ctx.drawImage(sprites, 7 * 16 + 1, 4 * 16, 16, 16, writeX, writeY, player.style.radius, player.style.radius);
+    ctx.drawImage(sprites, (7 * 16), 4 * 16, 16, 16, writeX, writeY, player.style.radius, player.style.radius);
     ctx.resetTransform();
     //ctx.beginPath();
-    ctx.strokeStyle = "red";
-    ctx.rect(writeX, writeY, player.style.radius, player.style.radius);
-    ctx.stroke();
+    //ctx.strokeStyle = "red";
+    //ctx.rect(writeX, writeY, player.style.radius, player.style.radius);
+    //ctx.stroke();
   }
 
   for (var i in shells) {
@@ -199,8 +202,8 @@ function tick() {
     ctx.translate(-rotatedX, -rotatedY);
     ctx.drawImage(sprites, 16, 3 * 16, 16, 16, writeX, writeY, shell.style.radius, shell.style.radius);
     ctx.resetTransform();
-    ctx.rect(writeX, writeY, shell.style.radius, shell.style.radius);
-    ctx.stroke();
+    //ctx.rect(writeX, writeY, shell.style.radius, shell.style.radius);
+    //ctx.stroke();
   }
 
   //ctx.reset();
@@ -220,8 +223,8 @@ function tick() {
     const writeY = (y - (cameraY - halfHeight));
 
     ctx.drawImage(sprites, 32, 3 * 16, 16, 16, writeX, writeY, 30, 30);
-    ctx.rect(writeX, writeY, 30, 30);
-    ctx.stroke();
+    //ctx.rect(writeX, writeY, 30, 30);
+    //ctx.stroke();
   }
 
   requestAnimationFrame(tick);
