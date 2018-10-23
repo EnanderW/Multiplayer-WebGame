@@ -92,29 +92,32 @@ body {
   animation: show 6s;
 }
 
-#shellSlot {
+#informationBox {
   position: absolute;
-  width: 8%;
-  height: 9%;
+  width: 18%;
+  height: 12%;
+  background: rgba(40, 40, 40, 0.7);
   /*border: 2px solid rgba(0,0,0,0.7); */
-  bottom: 1%;
-  left: 1%;
+  bottom: 0.5%;
+  left: 0.5%;
   display: flex;
 }
 
-#shellSlot #shellPic {
-  flex-grow: 1;
-  background: url('resources/Emerald.jpg');
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-}
-
-#shellSlot #shellContainer {
+#informationBox #shellContainer {
   display: flex;
   align-items: center;
-  flex-grow: 1;
+  justify-content: center;
   font-family: Arial;
-  font-size: 100%;
+  font-size: 150%;
+  flex-grow: 1;
+}
+
+#speedBuffDiv {
+  background-image: url('/resources/rpgItems.png');
+  background-position: 16px 0;
+  width: 16px;
+  height: 16px;
+  flex-grow: 1;
 }
 
 #chatForm {

@@ -11,7 +11,7 @@ const shellAmount = document.getElementById("shellAmount");
 
 var players = [];
 var shells = [];
-var shell_map = [];
+var pickup_map = [];
 
 var cameraX = 500;
 var cameraY = 500;
@@ -78,7 +78,7 @@ socket.on('onConnect', function() {
   popupWindow.style.pointerEvents = "all";
   fullContainer.style.opacity = 0.4;
   shellAmountCount = 0;
-  shellAmount.innerHTML = "x0";
+  shellAmount.innerHTML = "0x";
 });
 
 socket.on('playerDeath', function() {
@@ -88,17 +88,17 @@ socket.on('playerDeath', function() {
   popupWindow.style.pointerEvents = "all";
   fullContainer.style.opacity = 0.4;
   shellAmountCount = 0;
-  shellAmount.innerHTML = "x0";
+  shellAmount.innerHTML = "0x";
 });
 
 var shellAmountCount = 0;
 
 socket.on('pickupShell', function(data) {
-  shellAmount.innerHTML = "x" + (++shellAmountCount);
+  shellAmount.innerHTML = (++shellAmountCount) + "x";
 });
 
 socket.on('shootShell', function() {
-  shellAmount.innerHTML = "x" + (--shellAmountCount);
+  shellAmount.innerHTML = (--shellAmountCount) + "x";
 });
 
 function handlePlayButton() {
@@ -110,13 +110,13 @@ function handlePlayButton() {
   popupWindow.style.opacity = 0;
   fullContainer.style.opacity = 1;
   shellAmountCount = 0;
-  shellAmount.innerHTML = "x0";
+  shellAmount.innerHTML = "0x";
 }
 
-socket.on('update', function(_players, _shells, _shell_map, _cameraX, _cameraY) {
+socket.on('update', function(_players, _shells, _pickup_map, _cameraX, _cameraY) {
   players = _players;
   shells = _shells;
-  shell_map = _shell_map;
+  pickup_map = _pickup_map;
   cameraX = _cameraX;
   cameraY = _cameraY;
 });
@@ -158,7 +158,7 @@ function tick() {
   ctx.closePath();*/
 
   ctx.strokeStyle = "rgba(30, 30, 30, 0.2)";
-  for (var i in players) {
+  for (let i in players) {
     const player = players[i];
     if (player == null) {
       continue;
@@ -194,16 +194,13 @@ function tick() {
       ctx.drawImage(sprites, (6 * 16), 32, 16, 16, writeX, writeY, player.radius, player.radius);
     }
     ctx.resetTransform();
-    //ctx.beginPath();
-    //ctx.strokeStyle = "red";
-    //ctx.rect(writeX, writeY, player.style.radius, player.style.radius);
-    //ctx.stroke();
   }
 
-  for (var i in shells) {
+  for (let i in shells) {
     const shell = shells[i];
     const x = shell.x;
     const y = shell.y;
+
     if ((x < cameraX - halfWidth || x > cameraX + halfWidth)) {
       continue;
     }
@@ -222,16 +219,14 @@ function tick() {
     ctx.translate(rotatedX, rotatedY);
     ctx.rotate(shell.rotation);
     ctx.translate(-rotatedX, -rotatedY);
-    ctx.drawImage(sprites, 16, 3 * 16, 16, 16, writeX, writeY, shell.radius, shell.radius);
+    ctx.drawImage(sprites, shell.sX, shell.sY, 16, 16, writeX, writeY, shell.radius, shell.radius);
     ctx.resetTransform();
-    //ctx.rect(writeX, writeY, shell.style.radius, shell.style.radius);
-    //ctx.stroke();
   }
 
-  for (var i in shell_map) {
-    const shell = shell_map[i];
-    const x = shell.x;
-    const y = shell.y;
+  for (let i in pickup_map) {
+    const pickup = pickup_map[i];
+    const x = pickup.x;
+    const y = pickup.y;
     if ((x < cameraX - halfWidth || x > cameraX + halfWidth)) {
       continue;
     }
@@ -243,9 +238,7 @@ function tick() {
     const writeX = (x - (cameraX - halfWidth));
     const writeY = (y - (cameraY - halfHeight));
 
-    ctx.drawImage(sprites, 32, 3 * 16, 16, 16, writeX, writeY, 30, 30);
-    //ctx.rect(writeX, writeY, 30, 30);
-    //ctx.stroke();
+    ctx.drawImage(sprites, pickup.sX, pickup.sY, 16, 16, writeX, writeY, 30, 30);
   }
 
   requestAnimationFrame(tick);

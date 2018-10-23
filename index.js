@@ -5,13 +5,6 @@ const Entity = objects.entity;
 const Player = objects.player;
 const Shell = objects.shell;
 const Pickup = objects.pickup;
-//var player = require('./objects/Player');
-
-/*
-Shoot balls/bullets.
-When balls hit players the player flies back.
-If a player is outside the map area, they die.
-*/
 
 const g = 108;
 var delta = 0;
@@ -19,9 +12,6 @@ var lastTime = Date.now();
 
 var mapWidth = 1000;
 var mapHeight = 1000;
-
-//var updateFps = Date.now();
-//var fps = 0;
 
 var counter = 0;
 function getCounter() {
@@ -46,7 +36,7 @@ io.on('connection', (socket) => {
     socket.emit('onConnect');
 
     const id = getCounter();
-    const player = new Player(Math.floor(Math.random() * mapWidth), Math.floor(Math.random() * mapHeight), 0, 0, id);
+    const player = new Player(Math.floor(Math.random() * mapWidth), Math.floor(Math.random() * mapHeight), 7*16, 4*16, 0, 0, id);
     sockets[id] = {
       socket: socket,
       player: player
@@ -56,7 +46,6 @@ io.on('connection', (socket) => {
       player.y = Math.floor(Math.random() * mapHeight);
       player.velX = 0;
       player.velY = 0;
-      //player = new Player(Math.floor(Math.random() * mapWidth), Math.floor(Math.random() * mapHeight), 0, 0, id);
       players[id] = player;
     });
 
@@ -129,26 +118,31 @@ io.on('connection', (socket) => {
         return;
       }
 
-      var dX = data.mouseX - data.halfX;
-      var dY = data.mouseY - data.halfY;
+      const dX = data.mouseX - data.halfX - 20;
+      const dY = data.mouseY - data.halfY - 20;
+      const v = Math.sqrt(dX * dX + dY * dY);
 
       const shellRound = player.shellRound;
-      const half = Math.floor(shellRound / 2);
+      const half = (shellRound - 1) / 2;
+      const oX = (dX / v) * 420;
+      const oY = (dY / v) * 420;
 
+      const rotOrigin = (Math.PI / 12);
       for (let times = -half; times <= half; times++) {
-        const vX = dX + (times * 100);
-        const vY = dY + (times * 100);
-        const v = Math.sqrt(vX * vX + vY * vY);
-        const velocityX = (vX / v) * 420;
-        const velocityY = (vY / v) * 420;
+        const theta = rotOrigin * times;
+        console.log("Theta: " + theta + " | Deg: " + (theta * 180 / Math.PI) + " | Times: " + times);
+        const cos = Math.cos(theta);
+        const sin = Math.sin(theta);
+        const velocityX = oX * cos - oY * sin;
+        const velocityY = oX * sin + oY * cos;
 
-        const shell = new Shell(player.x, player.y, velocityX, velocityY, shells.length, 1, player.id);
+        const shell = new Shell(player.x + 2, player.y + 2, 16, 48, velocityX, velocityY, shells.length, 1, player.id);
 
-        shell.rotation = Math.atan2(vY, vX) + (Math.PI / 2);
+        shell.rotation = Math.atan2(velocityY, velocityX) + (Math.PI / 2);
 
         shells.push(shell);
         setTimeout(function() {
-          shells.splice(shell.id, 1);
+          shells.splice(shells.indexOf(shell), 1);
         }, 3000);
       }
 
@@ -176,7 +170,7 @@ function updateShells() {
     sockets[player.id].socket.emit('pickupShell');
   }
 
-  const shell = new Pickup(x, y, radius, onPickup);
+  const shell = new Pickup(x, y, 32, 48, radius, 0, onPickup);
 
   pickup_map.push(shell);
 }
@@ -237,6 +231,22 @@ function updateServer() {
     for (let pickupI = 0; pickupI < sizeMap; pickupI++) {
       const pickup = pickup_map[pickupI];
 
+      if (player.speed > 150 && pickup.type == 1) {
+        continue;
+      }
+
+      if (player.shieldCooldownAdd < 2500 && pickup.type == 2) {
+        continue;
+      }
+
+      if (player.shellRound > 1 && pickup.type == 3) {
+        continue;
+      }
+
+      if (player.velocityReducer < 1 && pickup.type == 4) {
+        continue;
+      }
+
       const dX = pickup.x - player.x;
       const dY = pickup.y - player.y;
       const distanceSquared = (dX * dX + dY * dY);
@@ -273,8 +283,8 @@ function updateServer() {
       (player.x + player.radius > shell.x) &&
       (player.y < shell.y + shell.radius) &&
       (player.y + player.radius > shell.y)) {
-        player.velX = shell.velX * player.velocityReducer;
-        player.velY = shell.velY * player.velocityReducer;
+        player.velX += shell.velX * player.velocityReducer;
+        player.velY += shell.velY * player.velocityReducer;
         shells.splice(i, 1);
         break;
       }
@@ -296,18 +306,61 @@ function updateServer() {
 function updatePowerups() {
   const nextTime = Math.round(Math.random() * (20000 - (players.length * 1000))) + 1000;
 
+  if (pickup_map.length > players.length) {
+    setTimeout(updatePowerups, nextTime);
+    return;
+  }
   const x = Math.floor(Math.random() * mapWidth);
   const y = Math.floor(Math.random() * mapHeight);
   const radius = 5;
 
-  const onPickup = function(player) {
+  const type = Math.floor(Math.random() * 4) + 1;
+  var sX = 0;
+  var sY = 0;
+  var onPickup;
+  switch(type) {
+    case 1: // Speed buff
+      onPickup = function(player) {
+        player.speed = 200;
+        setTimeout(function() {
+          player.speed = 150;
+        }, 6000);
+      }
+      break;
+    case 2: // Shield cooldown reduce
+      sX = 16;
+      onPickup = function(player) {
+        player.shieldCooldownAdd = 1000;
+        setTimeout(function() {
+          player.shieldCooldownAdd = 2500;
+        }, 10000);
+      }
+      break;
+    case 3: // Shell amount
+      sX = 48;
+      onPickup = function(player) {
+        player.shellRound = 3;
+        setTimeout(function() {
+          player.shellRound = 1;
+        }, 10000);
+      }
+      break;
+    case 4: // Velocity reduce
+      sX = 32;
+      onPickup = function(player) {
+        player.velocityReducer = 0.5;
+        setTimeout(function() {
+          player.velocityReducer = 1;
+        }, 8000);
+      }
+      break;
   }
 
-  const pickup = new Pickup(x, y, radius, onPickup);
+  const pickup = new Pickup(x, y, sX, sY, radius, type, onPickup);
   pickup_map.push(pickup);
   setTimeout(updatePowerups, nextTime);
 }
 
-setTimeout(updatePowerups, 5000);
+setTimeout(updatePowerups, 10000);
 setInterval(updateServer, 1);
 setInterval(updateShells, 4000);
