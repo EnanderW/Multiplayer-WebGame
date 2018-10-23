@@ -144,7 +144,7 @@ function tick() {
   const zeroY = -(cameraY - halfHeight);
   const maxY = mapHeight - (cameraY - halfHeight);
 
-  ctx.strokeStyle = "#000000";
+  /*ctx.strokeStyle = "#000000";
   ctx.beginPath();
   ctx.moveTo(zeroX, zeroY);
   ctx.lineTo(zeroX, maxY);
@@ -155,7 +155,7 @@ function tick() {
   ctx.moveTo(maxX, zeroY);
   ctx.lineTo(zeroX, zeroY);
   ctx.stroke();
-  ctx.closePath();
+  ctx.closePath();*/
 
   ctx.strokeStyle = "rgba(30, 30, 30, 0.2)";
   for (var i in players) {
@@ -165,6 +165,7 @@ function tick() {
     }
     const x = player.x;
     const y = player.y;
+
     if ((x < cameraX - halfWidth || x > cameraX + halfWidth)) {
       continue;
     }
@@ -180,10 +181,18 @@ function tick() {
     const rotatedX = writeX + halfRadius;
     const rotatedY = writeY + halfRadius;
 
-    ctx.translate(rotatedX, rotatedY);
-    ctx.rotate(player.rotation);
-    ctx.translate(-rotatedX, -rotatedY);
-    ctx.drawImage(sprites, (7 * 16), 4 * 16, 16, 16, writeX, writeY, player.radius, player.radius);
+    const shield = player.shield;
+    if (!shield) {
+      ctx.translate(rotatedX, rotatedY);
+      ctx.rotate(player.rotation);
+      ctx.translate(-rotatedX, -rotatedY);
+      ctx.drawImage(sprites, (7 * 16), 4 * 16, 16, 16, writeX, writeY, player.radius, player.radius);
+    } else {
+      ctx.translate(rotatedX, rotatedY);
+      ctx.rotate(player.rotation + Math.PI / 4);
+      ctx.translate(-rotatedX, -rotatedY);
+      ctx.drawImage(sprites, (6 * 16), 32, 16, 16, writeX, writeY, player.radius, player.radius);
+    }
     ctx.resetTransform();
     //ctx.beginPath();
     //ctx.strokeStyle = "red";

@@ -17,10 +17,15 @@ class Player extends Entity {
     this.down = false;
     this.left = false;
     this.right = false;
+    this.speed = 150;
+    this.velocityReducer = 1;
+    this.shellRound = 3;
     //this.ballCooldown = 0;
     this.shells = 0;
     this.radius = 40;
-
+    this.shield = false;
+    this.shieldCooldown = 0;
+    this.shieldCooldownAdd = 2500;
   }
 }
 
@@ -33,8 +38,18 @@ class Shell extends Entity {
   }
 }
 
+class Pickup {
+  constructor(x, y, radius, onPickup) {
+    this.x = x;
+    this.y = y;
+    this.radius = radius;
+    this.onPickup = onPickup;
+  }
+}
+
 module.exports = {
   entity: Entity,
   player: Player,
-  shell: Shell
+  shell: Shell,
+  pickup: Pickup
 };

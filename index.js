@@ -1,9 +1,10 @@
-var express = require('express');
-var socket = require('socket.io');
-var objects = require('./objects/Entity');
+const express = require('express');
+const socket = require('socket.io');
+const objects = require('./objects/Entity');
 const Entity = objects.entity;
 const Player = objects.player;
 const Shell = objects.shell;
+const Pickup = objects.pickup;
 //var player = require('./objects/Player');
 
 /*
@@ -12,7 +13,7 @@ When balls hit players the player flies back.
 If a player is outside the map area, they die.
 */
 
-var g = 108;
+const g = 108;
 var delta = 0;
 var lastTime = Date.now();
 
@@ -27,20 +28,17 @@ function getCounter() {
   return counter++;
 }
 
-var app = express();
-
-var server = app.listen(4000, function() {
+const app = express();
+const server = app.listen(4000, function() {
   console.log("Listening on port 4000...");
 });
-
-var io = socket(server);
-
+const io = socket(server);
 app.use(express.static('public'));
 
 const sockets = [];
 const shells = [];
 const players = [];
-const shell_map = [];
+const pickup_map = [];
 
 io.on('connection', (socket) => {
     console.log('A client has connected.');
@@ -63,7 +61,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('serverMessage', function(data) {
-      for (var i in sockets) {
+      for (let i in sockets) {
         const dataSocket = sockets[i];
         dataSocket.socket.emit('clientMessage', data);
       }
@@ -79,6 +77,13 @@ io.on('connection', (socket) => {
     });
     socket.on('keydown', function(data) {
       switch(data) {
+        case 32:
+          const now = Date.now();
+          if (player.shieldCooldown - now <= 0) {
+            player.shield = !player.shield;
+            player.shieldCooldown = now + player.shieldCooldownAdd;
+          }
+          break;
         case 68:
         case 39:
           player.right = true;
@@ -124,39 +129,56 @@ io.on('connection', (socket) => {
         return;
       }
 
-      const dX = data.mouseX - data.halfX;
-      const dY = data.mouseY - data.halfY;
-      const v = Math.sqrt(dX * dX + dY * dY);
-      const velocityX = (dX / v) * 420;
-      const velocityY = (dY / v) * 420;
+      var dX = data.mouseX - data.halfX;
+      var dY = data.mouseY - data.halfY;
 
-      //player.ballCooldown = Date.now() + 600;
-      const shell = new Shell(player.x, player.y, velocityX, velocityY, shells.length, 1, player.id);
+      const shellRound = player.shellRound;
+      const half = Math.floor(shellRound / 2);
 
-      shell.rotation = Math.atan2(dY, dX) + (Math.PI / 2);
+      for (let times = -half; times <= half; times++) {
+        const vX = dX + (times * 100);
+        const vY = dY + (times * 100);
+        const v = Math.sqrt(vX * vX + vY * vY);
+        const velocityX = (vX / v) * 420;
+        const velocityY = (vY / v) * 420;
 
-      shells.push(shell);
+        const shell = new Shell(player.x, player.y, velocityX, velocityY, shells.length, 1, player.id);
+
+        shell.rotation = Math.atan2(vY, vX) + (Math.PI / 2);
+
+        shells.push(shell);
+        setTimeout(function() {
+          shells.splice(shell.id, 1);
+        }, 3000);
+      }
+
       socket.emit('shootShell');
       player.shells--;
-      setTimeout(function() {
-        shells.splice(shell.id, 1);
-      }, 3000);
     });
 });
 
 function updateShells() {
-  if (shell_map.length >= players.length) {
+  if (pickup_map.length >= players.length) {
     return;
   }
 
-  const shell = {
-    x: Math.floor(Math.random() * mapWidth),
-    y: Math.floor(Math.random() * mapHeight),
-    type: Math.floor(Math.random() * 4) + 1,
-    radius: 5
-  };
+  const x = Math.floor(Math.random() * mapWidth);
+  const y = Math.floor(Math.random() * mapHeight);
+  const radius = 5;
 
-  shell_map.push(shell);
+  const onPickup = function(player) {
+    if (player.shield) {
+      player.shield = false;
+      player.shieldCooldown = Date.now() + player.shieldCooldownAdd;
+    }
+
+    player.shells++;
+    sockets[player.id].socket.emit('pickupShell');
+  }
+
+  const shell = new Pickup(x, y, radius, onPickup);
+
+  pickup_map.push(shell);
 }
 
 function handleDeath(player) {
@@ -170,25 +192,26 @@ function updateServer() {
   delta = (currentTime - lastTime) / 1000;
   lastTime = currentTime;
 
-  for (var i in players) {
+  for (let i in players) {
     const player = players[i];
+    const speed = player.speed;
     if (!(Math.abs(player.velX) > 0.2 || Math.abs(player.velY) > 0.2)) {
-    if (player.up) {
-      player.y -= 150 * delta;
-    }
+      if (player.up) {
+        player.y -= speed * delta;
+      }
 
-    if (player.down) {
-      player.y += 150 * delta;
-    }
+      if (player.down) {
+        player.y += speed * delta;
+      }
 
-    if (player.left) {
-      player.x -= 150 * delta;
-    }
+      if (player.left) {
+        player.x -= speed * delta;
+      }
 
-    if (player.right) {
-      player.x += 150 * delta;
+      if (player.right) {
+        player.x += speed * delta;
+      }
     }
-  }
 
     if (player.velX > 0) {
       player.velX -= g * delta;
@@ -210,26 +233,24 @@ function updateServer() {
       continue;
     }
 
+    const sizeMap = pickup_map.length;
+    for (let pickupI = 0; pickupI < sizeMap; pickupI++) {
+      const pickup = pickup_map[pickupI];
 
-    const sizeMap = shell_map.length;
-    for (var shellI = 0; shellI < sizeMap; shellI++) {
-      const shell = shell_map[shellI];
-
-      const dX = shell.x - player.x;
-      const dY = shell.y - player.y;
+      const dX = pickup.x - player.x;
+      const dY = pickup.y - player.y;
       const distanceSquared = (dX * dX + dY * dY);
-      const rad = (shell.radius + player.radius);
+      const rad = (pickup.radius + player.radius);
       if (distanceSquared <= rad * rad) {
-        sockets[i].socket.emit('pickupShell', shell.type);
-        player.shells++;
-        shell_map.splice(shellI, 1);
+        pickup.onPickup(player);
+        pickup_map.splice(pickupI, 1);
         break;
       }
     }
   }
 
   const sizeShells = shells.length;
-  for (var i = 0; i < sizeShells; i++) {
+  for (let i = 0; i < sizeShells; i++) {
     const shell = shells[i];
 
     if (shell == null) {
@@ -239,53 +260,54 @@ function updateServer() {
     shell.x += shell.velX * delta;
     shell.y += shell.velY * delta;
 
-    for (var playerI in players) {
+    for (let playerI in players) {
       const player = players[playerI];
-      //shell.x = player.x;
-      //console.log("------------");
-      //console.log("pPos: " + player.x + ", " + player.y + " | " + player.style.radius);
-      //console.log("sPos: " + shell.x + ", " + shell.y + " | " + shell.style.radius);
-      //console.log("p: " + player.id + " s: " + shell.playerId);
-      if (player.id == shell.playerId) {
-        //console.log("1");
+      if (player.shield) {
         continue;
       }
-      if (!(player.x < shell.x + shell.radius)) {
-        //console.log("pX: " + player.x + " sX: " + shell.x + " fX: " + (shell.x + shell.radius));
-        //console.log("2");
-        continue;
-      }
-      if (!(player.x + player.radius > shell.x)) {
-        //console.log("fX: " + (player.x + player.size) + " sX: " + shell.x);
-        //console.log("3");
-        continue;
-      }
-      if (!(player.y < shell.y + shell.radius)) {
-        //console.log("4");
-        continue;
-      }
-      if (player.y + player.radius > shell.y) {
 
-        //console.log("Collision");
-        player.velX = shell.velX;
-        player.velY = shell.velY;
+      if (player.id == shell.playerId) {
+        continue;
+      }
+      if ((player.x < shell.x + shell.radius) &&
+      (player.x + player.radius > shell.x) &&
+      (player.y < shell.y + shell.radius) &&
+      (player.y + player.radius > shell.y)) {
+        player.velX = shell.velX * player.velocityReducer;
+        player.velY = shell.velY * player.velocityReducer;
         shells.splice(i, 1);
         break;
       }
     }
   }
 
-  for (var i in players) {
+  for (let i in players) {
     const dataSocket = sockets[i];
     const player = players[i];
     dataSocket.socket.emit('update',
     players,
     shells,
-    shell_map,
+    pickup_map,
     player.x,
     player.y);
   }
 }
 
+function updatePowerups() {
+  const nextTime = Math.round(Math.random() * (20000 - (players.length * 1000))) + 1000;
+
+  const x = Math.floor(Math.random() * mapWidth);
+  const y = Math.floor(Math.random() * mapHeight);
+  const radius = 5;
+
+  const onPickup = function(player) {
+  }
+
+  const pickup = new Pickup(x, y, radius, onPickup);
+  pickup_map.push(pickup);
+  setTimeout(updatePowerups, nextTime);
+}
+
+setTimeout(updatePowerups, 5000);
 setInterval(updateServer, 1);
 setInterval(updateShells, 4000);
