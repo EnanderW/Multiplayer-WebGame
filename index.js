@@ -285,28 +285,21 @@ function updateServer() { // Körs varje frame (så ofta den kan) Hanterar all m
       const rad = (pickup.radius + player.radius);
       if (distanceSquared <= rad * rad) { // Om de nuddar varandra kan den plockas upp
         pickup.onPickup(player); // Kör funktionen som väljder vad som skall hända
-        var time = 1000;
-        var text = "";
         switch(pickup.type) {
           case 1:
-            time = 6000;
-            text = "Speed";
+            sockets[player.id].socket.emit('buff', {time: 6000, text: "Speed"});
             break;
           case 2:
-            time = 10000;
-            text = "Shield";
+            sockets[player.id].socket.emit('buff', {time: 10000, text: "Shield"});
             break;
           case 3:
-            time = 10000;
-            text = "Shell";
+            sockets[player.id].socket.emit('buff', {time: 10000, text: "Shell"});
             break;
           case 4:
-            time = 8000;
-            text = "Velocity";
+            sockets[player.id].socket.emit('buff', {time: 8000, text: "Velocity"});
             break;
         }
 
-        sockets[player.id].socket.emit('buff', {time: time, text: text});
         pickup_map.splice(pickupI, 1); // Ta bort pickupen ifrån arrayen
         break;
       }
