@@ -1,30 +1,29 @@
-// Make connection
-const socket = io.connect('10.204.149.4:4000');
+const socket = io.connect('10.204.149.4:4000'); // Anslut till servern som vi startade - Om den inte är startad kommer det inte funka
 
-const canvas = document.getElementById("canvas");
-const ctx = canvas.getContext("2d");
+const canvas = document.getElementById("canvas"); // Hämta canvasen ifrån HTML
+const ctx = canvas.getContext("2d"); // Hämta 2d context ritnings-funktioner ifrån canvasen
 
-const fullContainer = document.getElementById("fullContainer");
+const fullContainer = document.getElementById("fullContainer"); // Hämta några andra HTML element för användning
 const popupWindow = document.getElementById("popMax");
 const shellWindow = document.getElementById("shellSlot");
 const shellAmount = document.getElementById("shellAmount");
 
-var players = [];
+var players = []; // Arrays för alla spelare, shells och pickups
 var shells = [];
 var pickup_map = [];
 
-var cameraX = 500;
+var cameraX = 500; // Spara kamera position så att vi kan rita ut allt på rätt plats
 var cameraY = 500;
 
-const backgroundImage = new Image();
+const backgroundImage = new Image(); // Hämta bakgrund bilden för banan
 backgroundImage.src = "/resources/Pattern_2.jpg";
 backgroundImage.width = 1000;
 backgroundImage.height = 1000;
 
-const sprites = new Image();
+const sprites = new Image(); // Hämta bilden för alla sprites
 sprites.src = "/resources/rpgItems.png";
 
-var mouseX = 0;
+var mouseX = 0; // Spara positionen för musen
 var mouseY = 0;
 
 var mapWidth = 1000;
@@ -38,9 +37,9 @@ var halfHeight = canvas.height / 2;
 
 ctx.strokeStyle = "rgb(0, 200, 0)";
 
-setupChat(socket, form);
+setupChat(socket, form); // Starta chatten som ligger i chat.js
 
-function updateSize() {
+function updateSize() { // Denna funktion körs om användaren byter storlek på sidan
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 
@@ -48,10 +47,10 @@ function updateSize() {
   halfHeight = canvas.height / 2;
 }
 
-document.addEventListener('mousemove', function(event) {
+document.addEventListener('mousemove', function(event) { // Uppdatera mus position när de rör på musen
   mouseX = event.clientX;
   mouseY = event.clientY;
-  socket.emit("rotation", 0.785398163 + Math.atan2(mouseY - (halfHeight + 20), mouseX - (halfWidth + 20)));
+  socket.emit("rotation", 0.785398163 + Math.atan2(mouseY - (halfHeight + 20), mouseX - (halfWidth + 20))); // Skicka rotationen i radians till servern
 });
 
 document.addEventListener('keydown', function(event) {
@@ -139,10 +138,10 @@ function tick() {
     canvas.height
   );
 
-  const zeroX = -(cameraX - halfWidth);
-  const maxX = mapWidth - (cameraX - halfWidth);
-  const zeroY = -(cameraY - halfHeight);
-  const maxY = mapHeight - (cameraY - halfHeight);
+  //const zeroX = -(cameraX - halfWidth);
+  //const maxX = mapWidth - (cameraX - halfWidth);
+  //const zeroY = -(cameraY - halfHeight);
+  //const maxY = mapHeight - (cameraY - halfHeight);
 
   /*ctx.strokeStyle = "#000000";
   ctx.beginPath();

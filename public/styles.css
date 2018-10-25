@@ -94,13 +94,15 @@ body {
 
 #informationBox {
   position: absolute;
-  width: 18%;
-  height: 12%;
+  width: 12%;
+  height: 18%;
   background: rgba(40, 40, 40, 0.7);
   /*border: 2px solid rgba(0,0,0,0.7); */
   bottom: 0.5%;
   left: 0.5%;
   display: flex;
+  font-family: Arial;
+  flex-direction: column-reverse;
 }
 
 #informationBox #shellContainer {
@@ -113,11 +115,27 @@ body {
 }
 
 #speedBuffDiv {
-  background-image: url('/resources/rpgItems.png');
-  background-position: 16px 0;
-  width: 16px;
-  height: 16px;
+  border-bottom: 1px solid black;
   flex-grow: 1;
+  color: #00ff26;
+}
+
+#shieldCooldownNerfDiv {
+  border-bottom: 1px solid black;
+  flex-grow: 1;
+  color: #00ff26;
+}
+
+#shellBuffDiv {
+  border-bottom: 1px solid black;
+  flex-grow: 1;
+  color: #00ff26;
+}
+
+#velocityNerfDiv {
+  border-bottom: 1px solid black;
+  flex-grow: 1;
+  color: #00ff26;
 }
 
 #chatForm {

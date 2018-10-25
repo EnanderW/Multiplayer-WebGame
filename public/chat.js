@@ -10,7 +10,9 @@ function setupChat(socket) {
   }
 
   socket.on('clientMessage', function(data) {
-    chatContainer.innerHTML += "<p>" + data + "</p>";
+    data = data.replace(/</, " ");
+    data = data.replace(/>/, " ");
+    chatContainer.innerHTML += "<p>&nbsp;" + data + "</p>";
     chatContainer.scrollTop = chatContainer.scrollHeight;
     if (chatContainer.children.length > 50) {
       var children = chatContainer.getElementsByTagName('p');
