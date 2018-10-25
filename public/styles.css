@@ -111,31 +111,16 @@ body {
   justify-content: center;
   font-family: Arial;
   font-size: 150%;
-  flex-grow: 1;
+  flex-grow: 3;
 }
 
-#speedBuffDiv {
+#buffDiv {
+  display: flex;
+  justify-content: center;
+  align-items: center;
   border-bottom: 1px solid black;
-  flex-grow: 1;
-  color: #00ff26;
-}
-
-#shieldCooldownNerfDiv {
-  border-bottom: 1px solid black;
-  flex-grow: 1;
-  color: #00ff26;
-}
-
-#shellBuffDiv {
-  border-bottom: 1px solid black;
-  flex-grow: 1;
-  color: #00ff26;
-}
-
-#velocityNerfDiv {
-  border-bottom: 1px solid black;
-  flex-grow: 1;
-  color: #00ff26;
+  flex-grow: 2;
+  color: rgba(150, 150, 150, 0.8);
 }
 
 #chatForm {

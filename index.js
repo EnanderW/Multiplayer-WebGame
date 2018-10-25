@@ -9,7 +9,7 @@ const Pickup = objects.pickup; // Spara Pickup klassen så att vi kan använda d
 delete objects; // Ta bort objects eftersom vi inte behöver den längre
 
 const g = 108; // Konstant som reducerar hastighets-värdena varje frame
-var delta = 0; // Delta värdet - Tid i sekunder mellan senaste framen
+//var delta = 0; // Delta värdet - Tid i sekunder mellan senaste framen
 // Om servern börjar "lagga" så kommer inte alla värden bli unreliable utan stanna kvar som de borde
 var lastTime = Date.now(); // Tiden i millisekunder då förra framen var
 
@@ -41,7 +41,7 @@ io.on('connection', (socket) => { // Körs när en datorn ansluter till servern
     socket.emit('onConnect'); // Skicka tillbaka ett anslutnings meddelande till clienten för att förbereda allt
 
     const id = getCounter(); // Hämta ett id för den nya spelaren
-    const player = new Player(Math.floor(Math.random() * mapWidth), Math.floor(Math.random() * mapHeight), 7*16, 4*16, 0, 0, id); //Skapa den nya spelaren efter Player klassen som skapades i Entity.js
+    const player = new Player(Math.floor(Math.random() * mapWidth), Math.floor(Math.random() * mapHeight), 112, 64, 0, 0, id); //Skapa den nya spelaren efter Player klassen som skapades i Entity.js
     playerAmount++; // Addera 1 på playerAmount för att det har skapats en ny spelare
     sockets[id] = { // Lägga till ett player-socket object i sockets arrayen
       socket: socket, // Socketen som skickas in av socket.io
@@ -51,6 +51,13 @@ io.on('connection', (socket) => { // Körs när en datorn ansluter till servern
       player.x = Math.floor(Math.random() * mapWidth); // Anse nya x och y värden för spelaren
       player.y = Math.floor(Math.random() * mapHeight);
       player.velX = 0;
+      player.speed = 150;
+      player.shells = 0;
+      player.shellRound = 1;
+      player.shieldCooldownAdd = 2500;
+      player.shieldCooldown = 0;
+      player.velocityReducer = 1;
+      player.shield = false;
       player.velY = 0;
       players[id] = player; // Lägg tillbaka spelaren i players arrayen
     });
@@ -74,27 +81,28 @@ io.on('connection', (socket) => { // Körs när en datorn ansluter till servern
     });
     socket.on('keydown', function(data) { // När en spelare trycker på en knapp körs denna funktion
       switch(data) { // Kolla vilka knappar de tryckte på och välj action
-        case 32:
+        case 5: // 1: right 2: left 3: down 4: up 5: shield
           const now = Date.now();
           if (player.shieldCooldown - now <= 0) {
-            player.shield = !player.shield;
-            player.shieldCooldown = now + player.shieldCooldownAdd;
+            player.shield = true;
+            if (player.shield) {
+              setTimeout(function() {
+                player.shield = false;
+              }, player.shieldCooldownAdd);
+            }
+            player.shieldCooldown = now + 10000;
           }
           break;
-        case 68:
-        case 39:
+        case 1:
           player.right = true;
           break;
-        case 37:
-        case 65:
+        case 2:
           player.left = true;
           break;
-        case 40:
-        case 83:
+        case 3:
           player.down = true;
           break;
-        case 38:
-        case 87:
+        case 4:
           player.up = true;
           break;
       }
@@ -102,27 +110,23 @@ io.on('connection', (socket) => { // Körs när en datorn ansluter till servern
 
     socket.on('keyup', function(data) { // Samma som över men kolla om de släpper en knapp
       switch(data) {
-        case 68:
-        case 39:
+        case 1:
           player.right = false;
           break;
-        case 37:
-        case 65:
+        case 2:
           player.left = false;
           break;
-        case 40:
-        case 83:
+        case 3:
           player.down = false;
           break;
-        case 38:
-        case 87:
+        case 4:
           player.up = false;
           break;
       }
     });
 
-    socket.on('ball', function(data) { // När de vill skjuta en shell köra denna funktion
-      if (player.shells <= 0) { // Kolla om de har några shells att skjuta, om inte: avsluta
+    socket.on('ball', function(data) { // När de vill skjuta en shell körs denna funktion
+      if (player.shells <= 0 || player.shield) { // Kolla om de har några shells att skjuta, om inte: avsluta
         return;
       }
 
@@ -174,7 +178,7 @@ function updateShells() { // Körs var 4:e sekund för att försöka spawna pick
   const onPickup = function(player) { // Anse vad som skall hända när en spelare plockar upp den
     if (player.shield) {
       player.shield = false;
-      player.shieldCooldown = Date.now() + player.shieldCooldownAdd;
+      player.shieldCooldown = Date.now() + 10000;
     }
 
     player.shells++;
@@ -197,7 +201,7 @@ function handleDeath(player) { // Hanterar vad som skall hända när en spelare 
 
 function updateServer() { // Körs varje frame (så ofta den kan) Hanterar all movemement och alla uppdateringar
   const currentTime = Date.now(); // Hämta den nuvarande tiden i millisekunder
-  delta = (currentTime - lastTime) / 1000; // Räkna ut delta värde
+  const delta = (currentTime - lastTime) / 1000; // Räkna ut delta värde
   lastTime = currentTime; // Sätt lastFrame till den nuvarande tiden för att kunna använda den nästa frame
 
   for (let i in players) { // Loopa igenom alla spelare för att uppdatera värden
@@ -233,8 +237,13 @@ function updateServer() { // Körs varje frame (så ofta den kan) Hanterar all m
       player.velY += g * delta;
     }
 
-    player.x += player.velX * delta;
-    player.y += player.velY * delta;
+    if (player.shield) {
+      player.x += player.velX * 0.7 * delta;
+      player.y += player.velY * 0.7 * delta;
+    } else {
+      player.x += player.velX * delta;
+      player.y += player.velY * delta;
+    }
 
     /*
     Om de är utanför skärmen -> DIE!
@@ -255,7 +264,7 @@ function updateServer() { // Körs varje frame (så ofta den kan) Hanterar all m
           continue;
         }
 
-        if (player.shieldCooldownAdd < 2500) {
+        if (player.shieldCooldownAdd > 2500) {
           continue;
         }
 
@@ -276,6 +285,28 @@ function updateServer() { // Körs varje frame (så ofta den kan) Hanterar all m
       const rad = (pickup.radius + player.radius);
       if (distanceSquared <= rad * rad) { // Om de nuddar varandra kan den plockas upp
         pickup.onPickup(player); // Kör funktionen som väljder vad som skall hända
+        var time = 1000;
+        var text = "";
+        switch(pickup.type) {
+          case 1:
+            time = 6000;
+            text = "Speed";
+            break;
+          case 2:
+            time = 10000;
+            text = "Shield";
+            break;
+          case 3:
+            time = 10000;
+            text = "Shell";
+            break;
+          case 4:
+            time = 8000;
+            text = "Velocity";
+            break;
+        }
+
+        sockets[player.id].socket.emit('buff', {time: time, text: text});
         pickup_map.splice(pickupI, 1); // Ta bort pickupen ifrån arrayen
         break;
       }
@@ -302,6 +333,7 @@ function updateServer() { // Körs varje frame (så ofta den kan) Hanterar all m
       if (player.id == shell.playerId) { // Om shellen nuddar spelaren som skjöt iväg den kan vi också ignorera
         continue;
       }
+
       if ((player.x < shell.x + shell.radius) &&
       (player.x + player.radius > shell.x) &&
       (player.y < shell.y + shell.radius) &&
@@ -355,7 +387,7 @@ function updatePowerups() { // Hanterar alla powerups
     case 2: // Shield cooldown reduce
       sX = 16;
       onPickup = function(player) {
-        player.shieldCooldownAdd = 1000;
+        player.shieldCooldownAdd = 3500;
         setTimeout(function() {
           player.shieldCooldownAdd = 2500;
         }, 10000);

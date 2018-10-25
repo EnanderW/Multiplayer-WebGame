@@ -7,10 +7,18 @@ const fullContainer = document.getElementById("fullContainer"); // Hämta några
 const popupWindow = document.getElementById("popMax");
 const shellWindow = document.getElementById("shellSlot");
 const shellAmount = document.getElementById("shellAmount");
+const buffDiv = document.getElementById("buffDiv");
 
 var players = []; // Arrays för alla spelare, shells och pickups
 var shells = [];
 var pickup_map = [];
+
+const controls =  {
+  left: false,
+  right: false,
+  up: false,
+  down: false
+};
 
 var cameraX = 500; // Spara kamera position så att vi kan rita ut allt på rätt plats
 var cameraY = 500;
@@ -23,11 +31,11 @@ backgroundImage.height = 1000;
 const sprites = new Image(); // Hämta bilden för alla sprites
 sprites.src = "/resources/rpgItems.png";
 
-var mouseX = 0; // Spara positionen för musen
-var mouseY = 0;
+//var mouseX = 0; // Spara positionen för musen
+//var mouseY = 0;
 
-var mapWidth = 1000;
-var mapHeight = 1000;
+const mapWidth = 1000;
+const mapHeight = 1000;
 
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
@@ -47,24 +55,78 @@ function updateSize() { // Denna funktion körs om användaren byter storlek på
   halfHeight = canvas.height / 2;
 }
 
-document.addEventListener('mousemove', function(event) { // Uppdatera mus position när de rör på musen
-  mouseX = event.clientX;
-  mouseY = event.clientY;
+document.addEventListener('mousemove', function(event) { // Uppdatera rotation när de rör på musen
+  const mouseX = event.clientX;
+  const mouseY = event.clientY;
   socket.emit("rotation", 0.785398163 + Math.atan2(mouseY - (halfHeight + 20), mouseX - (halfWidth + 20))); // Skicka rotationen i radians till servern
 });
 
 document.addEventListener('keydown', function(event) {
-  socket.emit('keydown', event.which);
+  switch(event.which) { // Kolla vilka knappar de tryckte på och välj action
+    case 32:
+    case 17:
+      socket.emit('keydown', 5);
+      break;
+    case 68:
+    case 39:
+      if(!controls.right) {
+        socket.emit('keydown', 1);
+      }
+      controls.right = true;
+      break;
+    case 37:
+    case 65:
+      if(!controls.left) {
+        socket.emit('keydown', 2);
+      }
+      controls.left = true;
+      break;
+    case 40:
+    case 83:
+      if(!controls.down) {
+        socket.emit('keydown', 3);
+      }
+      controls.down = true;
+      break;
+    case 38:
+    case 87:
+      if(!controls.up) {
+        socket.emit('keydown', 4);
+      }
+      controls.up = true;
+      break;
+  }
 });
 
 document.addEventListener('keyup', function(event) {
-  socket.emit('keyup', event.which);
+  switch(event.which) { // Kolla vilka knappar de tryckte på och välj action
+    case 68:
+    case 39:
+      socket.emit("keyup", 1);
+      controls.right = false;
+      break;
+    case 37:
+    case 65:
+      socket.emit("keyup", 2);
+      controls.left = false;
+      break;
+    case 40:
+    case 83:
+      socket.emit("keyup", 3);
+      controls.down = false;
+      break;
+    case 38:
+    case 87:
+      socket.emit("keyup", 4);
+      controls.up = false;
+      break;
+  }
 });
 
 document.addEventListener('click', function(event) {
     socket.emit('ball', {
-      mouseX: mouseX,
-      mouseY: mouseY,
+      mouseX: event.clientX,
+      mouseY: event.clientY,
       halfX: halfWidth,
       halfY: halfHeight
     });
@@ -78,6 +140,13 @@ socket.on('onConnect', function() {
   fullContainer.style.opacity = 0.4;
   shellAmountCount = 0;
   shellAmount.innerHTML = "0x";
+});
+
+socket.on('buff', function(data) {
+  buffDiv.innerHTML = data.text;
+  setTimeout(function() {
+    buffDiv.innerHTML = "";
+  }, data.time);
 });
 
 socket.on('playerDeath', function() {
@@ -156,7 +225,6 @@ function tick() {
   ctx.stroke();
   ctx.closePath();*/
 
-  ctx.strokeStyle = "rgba(30, 30, 30, 0.2)";
   for (let i in players) {
     const player = players[i];
     if (player == null) {
@@ -165,18 +233,18 @@ function tick() {
     const x = player.x;
     const y = player.y;
 
-    if ((x < cameraX - halfWidth || x > cameraX + halfWidth)) {
+    if ((x < left || x > right)) {
       continue;
     }
 
-    if (y < cameraY - halfHeight || y > cameraY + halfHeight) {
+    if (y < top || y > bottom) {
       continue;
     }
 
     const halfRadius = player.radius / 2;
 
-    const writeX = (x - (cameraX - halfWidth));
-    const writeY = (y - (cameraY - halfHeight));
+    const writeX = x - left;
+    const writeY = y - top;
     const rotatedX = writeX + halfRadius;
     const rotatedY = writeY + halfRadius;
 
@@ -185,12 +253,12 @@ function tick() {
       ctx.translate(rotatedX, rotatedY);
       ctx.rotate(player.rotation);
       ctx.translate(-rotatedX, -rotatedY);
-      ctx.drawImage(sprites, (7 * 16), 4 * 16, 16, 16, writeX, writeY, player.radius, player.radius);
+      ctx.drawImage(sprites, 112, 64, 16, 16, writeX, writeY, player.radius, player.radius);
     } else {
       ctx.translate(rotatedX, rotatedY);
       ctx.rotate(player.rotation + Math.PI / 4);
       ctx.translate(-rotatedX, -rotatedY);
-      ctx.drawImage(sprites, (6 * 16), 32, 16, 16, writeX, writeY, player.radius, player.radius);
+      ctx.drawImage(sprites, 96, 32, 16, 16, writeX, writeY, player.radius, player.radius);
     }
     ctx.resetTransform();
   }
@@ -200,18 +268,18 @@ function tick() {
     const x = shell.x;
     const y = shell.y;
 
-    if ((x < cameraX - halfWidth || x > cameraX + halfWidth)) {
+    if ((x < left || x > right)) {
       continue;
     }
 
-    if (y < cameraY - halfHeight || y > cameraY + halfHeight) {
+    if (y < top || y > bottom) {
       continue;
     }
 
     const halfRadius = shell.radius / 2;
 
-    const writeX = (x - (cameraX - halfWidth));
-    const writeY = (y - (cameraY - halfHeight));
+    const writeX = x - left;
+    const writeY = y - top;
     const rotatedX = writeX + halfRadius;
     const rotatedY = writeY + halfRadius;
 
@@ -226,16 +294,16 @@ function tick() {
     const pickup = pickup_map[i];
     const x = pickup.x;
     const y = pickup.y;
-    if ((x < cameraX - halfWidth || x > cameraX + halfWidth)) {
+    if (x < left || x > right) {
       continue;
     }
 
-    if (y < cameraY - halfHeight || y > cameraY + halfHeight) {
+    if (y < top || y > bottom) {
       continue;
     }
 
-    const writeX = (x - (cameraX - halfWidth));
-    const writeY = (y - (cameraY - halfHeight));
+    const writeX = x - left;
+    const writeY = y - top;
 
     ctx.drawImage(sprites, pickup.sX, pickup.sY, 16, 16, writeX, writeY, 30, 30);
   }
